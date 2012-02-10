@@ -1,0 +1,9 @@
+{
+      "namespace": "com.telenav.platform.AvroExample",
+      "name": "cserver",
+      "type": "record",
+      "fields": [
+             { "name" : "status", "type": "string"},
+             { "name" : "latitude", "type": "double"},
+             { "name" : "longitude", "type" : "double"} ]
+}
