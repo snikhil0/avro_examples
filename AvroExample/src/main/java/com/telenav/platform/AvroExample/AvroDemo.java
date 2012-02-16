@@ -6,15 +6,25 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.avro.Schema;
+import org.apache.avro.Schema.Field;
+import org.apache.avro.generic.GenericArray;
 import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericData.Array;
+import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.BinaryDecoder;
+import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.Decoder;
+import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.JsonDecoder;
 import org.apache.avro.io.JsonEncoder;
+import org.apache.avro.util.Utf8;
 
 
 /**
@@ -24,23 +34,34 @@ import org.apache.avro.io.JsonEncoder;
  */
 public class AvroDemo {
 	private final Schema payloadSchema;
+	private final Schema bodySchema;
 	
 	public AvroDemo() throws IOException{
 		payloadSchema = Schema.parse(new File("resources/log.avpr"));
+		bodySchema = Schema.parse(new File("resources/cserver.avpr"));
 	}
 	
 	public void write() throws IOException {
-		
 		ByteArrayOutputStream bao = new ByteArrayOutputStream();
 		GenericDatumWriter<GenericRecord> w = new GenericDatumWriter<GenericRecord>(payloadSchema);
 		JsonEncoder e = new JsonEncoder(payloadSchema, bao);
 		e.init(new FileOutputStream(new File("resources/test_data.avro")));
-		CServerLog log = new CServerLog("ok",37.371249,-122.064972);
+		
+		GenericRecord inner_record = new GenericData.Record(bodySchema);
+		inner_record.put("status", new Utf8("ok"));
+		inner_record.put("latitude", 37.371249);
+		inner_record.put("longitude", -122.064972);
+		
+		ByteArrayOutputStream inner_bao = new ByteArrayOutputStream();
+		BinaryEncoder be = new BinaryEncoder(inner_bao);
+		GenericDatumWriter<GenericRecord> inner_writer = new GenericDatumWriter<GenericRecord>(bodySchema);
+		inner_writer.write(inner_record, be);
+		be.flush();
 		
 		GenericRecord r = new GenericData.Record(payloadSchema);
 		r.put("timestamp", 1000001L);
 		r.put("appid", 1);
-		r.put("body", log.serialize());
+		r.put("body", ByteBuffer.wrap(inner_bao.toByteArray()));
 		w.write(r, e);
 		e.flush();
 		
@@ -53,13 +74,19 @@ public class AvroDemo {
 	    Decoder decoder = new JsonDecoder(s, new FileInputStream(new File("resources/test_data.avro")));
 	    GenericRecord rec = (GenericRecord)r.read(null, decoder);
 	    
-	    CServerLog cserver = new CServerLog();
 	    ByteBuffer bb = (ByteBuffer)rec.get("body");
-		GenericRecord log =  cserver.deserialize(bb.toString());
+	    
+	    Schema inner_schema = Schema.parse(new File("resources/cserver.avpr"));
+	    GenericDatumReader<GenericRecord> inner_reader = new GenericDatumReader<GenericRecord>(inner_schema);
+	    DecoderFactory fac = new DecoderFactory();
+	    Decoder inner_decoder = fac.createBinaryDecoder(bb.array(), null);
+	    
+	    GenericRecord inner_rec = (GenericRecord)inner_reader.read(null, inner_decoder);
+	    
     	System.out.println("timestamp: " + rec.get("timestamp") + "; appid: " 
     	+ rec.get("appid"));
-    	System.out.println("body: [status: " + log.get("status") + "; latitude: " 
-    	+ log.get("latitude") + "; longitude: " + log.get("longitude"));
+    	System.out.println("body: [status: " + inner_rec.get("status") + "; latitude: " 
+    	+ inner_rec.get("latitude") + "; longitude: " + inner_rec.get("longitude"));
 	}
 	
 	public static void main(String[] args) {
