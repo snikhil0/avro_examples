@@ -6,19 +6,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
-import org.apache.avro.generic.GenericArray;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericData.Array;
-import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
@@ -35,6 +28,11 @@ import org.apache.avro.util.Utf8;
 public class AvroDemo {
 	private final Schema payloadSchema;
 	private final Schema bodySchema;
+	public enum Format {
+		AVRO,
+		PROTOBUF,
+		JSON
+	}
 	
 	public AvroDemo() throws IOException{
 		payloadSchema = Schema.parse(new File("resources/log.avpr"));
@@ -61,6 +59,7 @@ public class AvroDemo {
 		GenericRecord r = new GenericData.Record(payloadSchema);
 		r.put("timestamp", 1000001L);
 		r.put("appid", 1);
+		r.put("body_type", new Utf8(Format.AVRO.toString()));
 		r.put("body", ByteBuffer.wrap(inner_bao.toByteArray()));
 		w.write(r, e);
 		e.flush();
@@ -85,7 +84,7 @@ public class AvroDemo {
 	    
     	System.out.println("timestamp: " + rec.get("timestamp") + "; appid: " 
     	+ rec.get("appid"));
-    	System.out.println("body: [status: " + inner_rec.get("status") + "; latitude: " 
+    	System.out.println("body: status: " + inner_rec.get("status") + "; latitude: " 
     	+ inner_rec.get("latitude") + "; longitude: " + inner_rec.get("longitude"));
 	}
 	

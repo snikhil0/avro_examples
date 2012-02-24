@@ -1,9 +1,10 @@
 {
       "namespace": "com.telenav.platform.AvroExample",
-      "name": "payloadSchema",
       "type": "record",
+      "name": "payloadSchema",
       "fields": [
           {"name": "timestamp", "type": "long"},
           {"name": "appid", "type": "int"},
+          {"name": "body_type", "type": "string"},
           {"name": "body", "type": "bytes"} ]
-}
+ }

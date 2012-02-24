@@ -2,7 +2,6 @@ package com.telenav.platform.AvroExample;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -12,7 +11,6 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
@@ -22,7 +20,11 @@ import org.apache.avro.util.Utf8;
 
 public class CServerLog implements Serializable{
 	
-	private String status;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -780437026449320064L;
+	
 	private double lat;
 	private double lon;
 	private final Schema wrappedSchema;
@@ -30,8 +32,8 @@ public class CServerLog implements Serializable{
 	public CServerLog() throws IOException {
 		wrappedSchema = Schema.parse(new File("resources/cserver.avpr"));
 	}
-	public CServerLog(String status, double lat, double lon) throws IOException{
-		this.status = status;
+	
+	public CServerLog(double lat, double lon) throws IOException{
 		this.lat = lat;
 		this.lon = lon;
 		wrappedSchema = Schema.parse(new File("resources/cserver.avpr"));
